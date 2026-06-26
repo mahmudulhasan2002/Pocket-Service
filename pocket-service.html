@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Pocket Service – Local Service Marketplace</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0f1e;
+    --surface: #111827;
+    --card: #1a2438;
+    --accent: #00d4aa;
+    --accent2: #ff6b35;
+    --accent3: #7c3aed;
+    --text: #f0f4ff;
+    --muted: #8b99b5;
+    --border: rgba(255,255,255,0.07);
+    --glow: 0 0 40px rgba(0,212,170,0.15);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* Custom Cursor */
+  .cursor {
+    width: 12px; height: 12px;
+    background: var(--accent);
+    border-radius: 50%;
+    position: fixed; top: 0; left: 0;
+    pointer-events: none; z-index: 9999;
+    transition: transform 0.1s ease;
+    mix-blend-mode: screen;
+  }
+  .cursor-trail {
+    width: 32px; height: 32px;
+    border: 1.5px solid var(--accent);
+    border-radius: 50%;
+    position: fixed; top: 0; left: 0;
+    pointer-events: none; z-index: 9998;
+    opacity: 0.4;
+    transition: all 0.25s ease;
+  }
+
+  /* Noise overlay */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0; opacity: 0.5;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.2rem 4rem;
+    background: rgba(10,15,30,0.7);
+    backdrop-filter: blur(24px);
+    border-bottom: 1px solid var(--border);
+    transition: background 0.3s;
+  }
+  .nav-logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.4rem; font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.5px;
+  }
+  .nav-logo span { color: var(--accent); }
+  .nav-links { display: flex; gap: 2.5rem; list-style: none; }
+  .nav-links a {
+    color: var(--muted); font-size: 0.9rem; font-weight: 500;
+    text-decoration: none; letter-spacing: 0.3px;
+    transition: color 0.2s;
+    position: relative;
+  }
+  .nav-links a::after {
+    content: ''; position: absolute; left: 0; bottom: -4px;
+    width: 0; height: 1.5px; background: var(--accent);
+    transition: width 0.3s ease;
+  }
+  .nav-links a:hover { color: var(--text); }
+  .nav-links a:hover::after { width: 100%; }
+  .nav-cta {
+    background: var(--accent); color: var(--bg);
+    padding: 0.55rem 1.4rem; border-radius: 100px;
+    font-weight: 600; font-size: 0.88rem;
+    text-decoration: none; transition: all 0.2s;
+    box-shadow: 0 0 20px rgba(0,212,170,0.3);
+  }
+  .nav-cta:hover { transform: translateY(-2px); box-shadow: 0 0 30px rgba(0,212,170,0.5); }
+
+  /* ── HERO ── */
+  #hero {
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 8rem 4rem 4rem;
+    position: relative; overflow: hidden;
+  }
+  .hero-bg {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 40%, rgba(0,212,170,0.08) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 50% at 80% 60%, rgba(124,58,237,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 40% at 60% 20%, rgba(255,107,53,0.06) 0%, transparent 60%);
+  }
+  .hero-grid {
+    position: absolute; inset: 0;
+    background-image: linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+  .hero-content {
+    position: relative; z-index: 1;
+    max-width: 780px; text-align: center;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: rgba(0,212,170,0.1); border: 1px solid rgba(0,212,170,0.25);
+    color: var(--accent); padding: 0.35rem 1rem;
+    border-radius: 100px; font-size: 0.8rem; font-weight: 500;
+    margin-bottom: 2rem; letter-spacing: 0.5px;
+    animation: fadeInUp 0.6s ease both;
+  }
+  .hero-badge::before { content: '●'; font-size: 0.5rem; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(3rem, 6vw, 5.5rem);
+    font-weight: 800; line-height: 1.05;
+    letter-spacing: -2px;
+    animation: fadeInUp 0.6s ease 0.1s both;
+  }
+  h1 .accent { color: var(--accent); display: block; }
+  h1 .accent2 { color: var(--accent2); }
+  .hero-desc {
+    margin: 1.5rem 0 2.5rem;
+    font-size: 1.1rem; color: var(--muted); line-height: 1.7;
+    max-width: 560px; margin-inline: auto;
+    animation: fadeInUp 0.6s ease 0.2s both;
+  }
+  .hero-btns {
+    display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;
+    animation: fadeInUp 0.6s ease 0.3s both;
+  }
+  .btn-primary {
+    background: var(--accent); color: var(--bg);
+    padding: 0.85rem 2rem; border-radius: 12px;
+    font-weight: 700; font-size: 0.95rem;
+    text-decoration: none; display: flex; align-items: center; gap: 0.5rem;
+    transition: all 0.25s; box-shadow: 0 0 24px rgba(0,212,170,0.3);
+  }
+  .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 0 40px rgba(0,212,170,0.5); }
+  .btn-outline {
+    border: 1px solid var(--border); color: var(--text);
+    padding: 0.85rem 2rem; border-radius: 12px;
+    font-weight: 500; font-size: 0.95rem;
+    text-decoration: none; display: flex; align-items: center; gap: 0.5rem;
+    transition: all 0.25s; background: rgba(255,255,255,0.03);
+  }
+  .btn-outline:hover { border-color: var(--accent); background: rgba(0,212,170,0.05); }
+  .hero-stats {
+    margin-top: 4rem; display: flex; gap: 3rem; justify-content: center;
+    animation: fadeInUp 0.6s ease 0.4s both;
+  }
+  .stat { text-align: center; }
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 2rem; font-weight: 800; color: var(--accent);
+    display: block;
+  }
+  .stat-label { font-size: 0.82rem; color: var(--muted); margin-top: 0.2rem; }
+
+  /* Floating phones */
+  .hero-phones {
+    position: absolute; right: 5%; top: 50%; transform: translateY(-50%);
+    display: none;
+  }
+  @media(min-width: 1100px) { .hero-phones { display: block; } }
+  .phone-frame {
+    width: 220px; height: 440px;
+    background: linear-gradient(145deg, #1e2d48, #0f1a2e);
+    border-radius: 36px;
+    border: 2px solid rgba(255,255,255,0.08);
+    box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
+    overflow: hidden; position: relative;
+    animation: float 6s ease-in-out infinite;
+  }
+  .phone-frame.tilt {
+    position: absolute; top: 60px; left: -160px;
+    transform: rotate(-8deg);
+    animation: float 6s ease-in-out 1s infinite;
+    opacity: 0.7;
+    width: 190px; height: 380px;
+  }
+  @keyframes float {
+    0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-16px) rotate(1deg)}
+  }
+  .phone-screen {
+    position: absolute; inset: 10px;
+    border-radius: 28px; overflow: hidden;
+    background: linear-gradient(180deg, #0d1b35 0%, #0a1220 100%);
+  }
+  .phone-notch {
+    width: 80px; height: 20px;
+    background: #0a0f1e; border-radius: 0 0 12px 12px;
+    margin: 0 auto; position: relative; z-index: 2;
+  }
+  .phone-ui { padding: 1rem 0.8rem; }
+  .phone-map {
+    width: 100%; height: 120px;
+    background: linear-gradient(135deg, #0d2137 0%, #1a3a5c 100%);
+    border-radius: 12px; position: relative; overflow: hidden; margin-bottom: 0.8rem;
+  }
+  .map-dot {
+    width: 10px; height: 10px; background: var(--accent);
+    border-radius: 50%; position: absolute;
+    box-shadow: 0 0 12px var(--accent);
+  }
+  .map-dot:nth-child(1) { top: 40%; left: 45%; }
+  .map-dot:nth-child(2) { top: 25%; left: 65%; background: var(--accent2); box-shadow: 0 0 12px var(--accent2); }
+  .map-dot:nth-child(3) { top: 60%; left: 30%; background: var(--accent3); box-shadow: 0 0 12px var(--accent3); }
+  .map-lines {
+    position: absolute; inset: 0;
+    background-image: linear-gradient(rgba(0,212,170,0.08) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(0,212,170,0.08) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+  .phone-card {
+    background: rgba(255,255,255,0.05); border-radius: 10px;
+    padding: 0.6rem; margin-bottom: 0.5rem;
+    display: flex; align-items: center; gap: 0.5rem;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  .pcard-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; flex-shrink: 0;
+  }
+  .pcard-info { flex: 1; }
+  .pcard-name { font-size: 0.65rem; font-weight: 600; color: var(--text); }
+  .pcard-sub { font-size: 0.55rem; color: var(--muted); }
+  .pcard-rating { font-size: 0.6rem; color: #fbbf24; font-weight: 700; }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── SECTION STYLES ── */
+  section { padding: 6rem 4rem; position: relative; }
+  .section-label {
+    font-size: 0.75rem; font-weight: 600; letter-spacing: 2px;
+    color: var(--accent); text-transform: uppercase; margin-bottom: 1rem;
+  }
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 800; letter-spacing: -1px; line-height: 1.1;
+  }
+  .section-desc {
+    color: var(--muted); font-size: 1rem; line-height: 1.7;
+    max-width: 540px; margin-top: 1rem;
+  }
+  .section-header { margin-bottom: 4rem; }
+
+  /* ── FEATURES ── */
+  #features { background: linear-gradient(180deg, var(--bg) 0%, var(--surface) 100%); }
+  .features-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem; max-width: 1200px; margin: 0 auto;
+  }
+  .feature-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 2rem;
+    transition: all 0.35s ease; position: relative; overflow: hidden;
+    cursor: default;
+  }
+  .feature-card::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at var(--mx,50%) var(--my,50%), rgba(0,212,170,0.07) 0%, transparent 60%);
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .feature-card:hover { transform: translateY(-6px); border-color: rgba(0,212,170,0.2); box-shadow: var(--glow); }
+  .feature-card:hover::before { opacity: 1; }
+  .feature-icon {
+    width: 52px; height: 52px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; margin-bottom: 1.2rem;
+  }
+  .feature-title {
+    font-family: 'Syne', sans-serif; font-size: 1.1rem;
+    font-weight: 700; margin-bottom: 0.6rem;
+  }
+  .feature-desc { font-size: 0.9rem; color: var(--muted); line-height: 1.6; }
+
+  /* ── HOW IT WORKS ── */
+  #how { background: var(--surface); }
+  .steps-wrapper { display: flex; gap: 2rem; flex-wrap: wrap; max-width: 1100px; margin: 0 auto; }
+  .step {
+    flex: 1; min-width: 220px;
+    display: flex; flex-direction: column; align-items: flex-start;
+    position: relative;
+  }
+  .step:not(:last-child)::after {
+    content: '';
+    position: absolute; top: 24px; left: calc(100% + 1rem);
+    width: calc(2rem - 2px); height: 1px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+  }
+  .step-num {
+    font-family: 'Syne', sans-serif; font-size: 0.75rem;
+    font-weight: 800; color: var(--accent); letter-spacing: 2px;
+    margin-bottom: 1rem;
+  }
+  .step-icon {
+    width: 48px; height: 48px; border-radius: 14px;
+    background: rgba(0,212,170,0.1); border: 1px solid rgba(0,212,170,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem; margin-bottom: 1.2rem;
+  }
+  .step-title {
+    font-family: 'Syne', sans-serif; font-size: 1rem;
+    font-weight: 700; margin-bottom: 0.5rem;
+  }
+  .step-desc { font-size: 0.88rem; color: var(--muted); line-height: 1.6; }
+
+  /* ── SERVICES ── */
+  #services { background: var(--bg); }
+  .services-scroll {
+    display: flex; gap: 1.2rem; overflow-x: auto; padding-bottom: 1rem;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    max-width: 1200px; margin: 0 auto;
+  }
+  .services-scroll::-webkit-scrollbar { display: none; }
+  .service-chip {
+    flex-shrink: 0; background: var(--card); border: 1px solid var(--border);
+    border-radius: 100px; padding: 0.6rem 1.4rem;
+    font-size: 0.88rem; font-weight: 500; cursor: pointer;
+    transition: all 0.2s; white-space: nowrap;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .service-chip.active, .service-chip:hover {
+    background: rgba(0,212,170,0.1); border-color: rgba(0,212,170,0.4);
+    color: var(--accent);
+  }
+  .services-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.5rem; max-width: 1200px; margin: 2rem auto 0;
+  }
+  .service-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 1.8rem;
+    transition: all 0.3s; cursor: pointer;
+    display: none;
+  }
+  .service-card.visible { display: block; animation: popIn 0.35s ease both; }
+  @keyframes popIn {
+    from { opacity:0; transform: scale(0.95) translateY(10px); }
+    to { opacity:1; transform: scale(1) translateY(0); }
+  }
+  .service-card:hover { transform: translateY(-4px); border-color: rgba(0,212,170,0.2); }
+  .sc-icon { font-size: 2rem; margin-bottom: 1rem; }
+  .sc-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; margin-bottom: 0.4rem; }
+  .sc-desc { font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem; }
+  .sc-meta { display: flex; justify-content: space-between; align-items: center; }
+  .sc-providers { font-size: 0.78rem; color: var(--muted); }
+  .sc-badge {
+    font-size: 0.72rem; padding: 0.25rem 0.7rem;
+    border-radius: 100px; font-weight: 600;
+  }
+
+  /* ── TEAM ── */
+  #team { background: var(--surface); }
+  .team-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem; max-width: 900px; margin: 0 auto;
+  }
+  .team-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 24px; padding: 2rem;
+    text-align: center; transition: all 0.3s; overflow: hidden; position: relative;
+  }
+  .team-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent3));
+    transform: scaleX(0); transform-origin: left; transition: transform 0.3s;
+  }
+  .team-card:hover { transform: translateY(-6px); }
+  .team-card:hover::before { transform: scaleX(1); }
+  .team-avatar {
+    width: 72px; height: 72px; border-radius: 50%;
+    margin: 0 auto 1rem;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800;
+    border: 2px solid var(--border);
+  }
+  .team-id { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.3rem; font-weight: 500; letter-spacing: 0.5px; }
+  .team-name { font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 700; margin-bottom: 0.3rem; }
+  .team-role {
+    font-size: 0.8rem; padding: 0.25rem 0.8rem;
+    border-radius: 100px; display: inline-block; margin-top: 0.5rem; font-weight: 500;
+  }
+
+  /* ── TECH STACK ── */
+  #tech { background: var(--bg); }
+  .tech-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem; max-width: 1100px; margin: 0 auto;
+  }
+  .tech-item {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 1.5rem 1rem;
+    text-align: center; transition: all 0.25s;
+  }
+  .tech-item:hover { border-color: rgba(0,212,170,0.3); transform: translateY(-3px); }
+  .tech-icon { font-size: 2rem; margin-bottom: 0.6rem; display: block; }
+  .tech-name { font-family: 'Syne', sans-serif; font-size: 0.9rem; font-weight: 700; }
+  .tech-type { font-size: 0.75rem; color: var(--muted); margin-top: 0.2rem; }
+
+  /* ── DATABASE ── */
+  #database { background: var(--surface); }
+  .db-layout {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 3rem;
+    align-items: start; max-width: 1100px; margin: 0 auto;
+  }
+  @media(max-width: 768px) { .db-layout { grid-template-columns: 1fr; } }
+  .db-tables { display: flex; flex-direction: column; gap: 1rem; }
+  .db-table {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; overflow: hidden; transition: all 0.25s;
+  }
+  .db-table:hover { border-color: rgba(0,212,170,0.25); }
+  .db-table-header {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.9rem 1.2rem;
+    background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .db-table-icon { font-size: 1rem; }
+  .db-table-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95rem; flex: 1; }
+  .db-table-badge {
+    font-size: 0.7rem; color: var(--accent); font-weight: 600;
+    background: rgba(0,212,170,0.1); padding: 0.2rem 0.6rem; border-radius: 100px;
+  }
+  .db-table-body { padding: 0.8rem 1.2rem; display: none; }
+  .db-table-body.open { display: block; }
+  .db-field {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.35rem 0; font-size: 0.83rem; border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .db-field:last-child { border-bottom: none; }
+  .field-type { color: var(--accent); font-family: monospace; font-size: 0.75rem; }
+  .field-name { color: var(--muted); }
+  .field-pk { color: var(--accent2); font-size: 0.65rem; font-weight: 700; }
+  .db-diagram {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 1.5rem; position: sticky; top: 5rem;
+  }
+  .db-diagram-title { font-family: 'Syne', sans-serif; font-weight: 700; margin-bottom: 1.5rem; font-size: 0.95rem; }
+  .erd-canvas { width: 100%; }
+
+  /* ── TIMELINE ── */
+  #timeline { background: var(--bg); }
+  .timeline-wrapper { max-width: 700px; margin: 0 auto; position: relative; }
+  .timeline-line {
+    position: absolute; left: 24px; top: 0; bottom: 0;
+    width: 1px; background: linear-gradient(180deg, var(--accent), transparent);
+  }
+  .timeline-item {
+    display: flex; gap: 1.5rem; margin-bottom: 2.5rem; position: relative;
+  }
+  .timeline-dot {
+    width: 48px; height: 48px; flex-shrink: 0;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; font-weight: 700; position: relative; z-index: 1;
+    font-family: 'Syne', sans-serif;
+    border: 2px solid var(--border);
+  }
+  .timeline-content {
+    flex: 1; background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 1.2rem 1.5rem; margin-top: 0.5rem;
+  }
+  .tl-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+  .tl-task { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95rem; }
+  .tl-status {
+    font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.65rem;
+    border-radius: 100px;
+  }
+  .status-done { background: rgba(0,212,170,0.15); color: var(--accent); }
+  .status-progress { background: rgba(251,191,36,0.15); color: #fbbf24; }
+  .status-not { background: rgba(255,255,255,0.06); color: var(--muted); }
+  .tl-desc { font-size: 0.85rem; color: var(--muted); }
+  .tl-members { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.6rem; }
+  .tl-member-tag {
+    font-size: 0.72rem; background: rgba(124,58,237,0.15);
+    color: #a78bfa; padding: 0.15rem 0.5rem; border-radius: 4px;
+  }
+
+  /* ── CONSTRAINTS ── */
+  #constraints { background: var(--surface); }
+  .constraints-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.2rem; max-width: 1000px; margin: 0 auto;
+  }
+  .constraint-item {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 1.4rem;
+    display: flex; gap: 1rem; align-items: flex-start;
+    transition: all 0.25s;
+  }
+  .constraint-item:hover { border-color: rgba(255,107,53,0.25); }
+  .constraint-icon {
+    width: 40px; height: 40px; flex-shrink: 0;
+    border-radius: 10px; background: rgba(255,107,53,0.1);
+    display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+  }
+  .constraint-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95rem; margin-bottom: 0.4rem; }
+  .constraint-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.6; }
+
+  /* ── CTA ── */
+  #cta {
+    background: linear-gradient(135deg, rgba(0,212,170,0.08), rgba(124,58,237,0.08));
+    border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    text-align: center;
+  }
+  #cta .section-title { font-size: clamp(2rem, 5vw, 3.5rem); }
+  #cta .section-desc { margin-inline: auto; margin-top: 1rem; }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--bg); border-top: 1px solid var(--border);
+    padding: 3rem 4rem;
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: gap;
+    gap: 1rem;
+  }
+  .footer-brand { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem; }
+  .footer-brand span { color: var(--accent); }
+  .footer-info { font-size: 0.82rem; color: var(--muted); margin-top: 0.3rem; }
+  .footer-right { text-align: right; font-size: 0.82rem; color: var(--muted); }
+
+  /* ── SCROLL REVEAL ── */
+  .reveal { opacity: 0; transform: translateY(30px); transition: all 0.6s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* ── MOBILE NAV TOGGLE ── */
+  .nav-toggle { display: none; background: none; border: none; color: var(--text); font-size: 1.4rem; cursor: pointer; }
+  @media(max-width: 768px) {
+    nav { padding: 1rem 1.5rem; }
+    .nav-links { display: none; position: absolute; top: 100%; left: 0; right: 0;
+      background: var(--surface); flex-direction: column; padding: 1rem 2rem 2rem; gap: 1.2rem; border-bottom: 1px solid var(--border); }
+    .nav-links.open { display: flex; }
+    .nav-toggle { display: block; }
+    section { padding: 4rem 1.5rem; }
+    #hero { padding: 7rem 1.5rem 4rem; }
+    .hero-stats { gap: 1.5rem; }
+    footer { padding: 2rem 1.5rem; flex-direction: column; align-items: flex-start; }
+    .footer-right { text-align: left; }
+    .steps-wrapper { flex-direction: column; }
+    .step:not(:last-child)::after { display: none; }
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--card); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-trail" id="cursorTrail"></div>
+
+<!-- NAV -->
+<nav id="navbar">
+  <a href="#" class="nav-logo">Pocket<span>Service</span></a>
+  <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">☰</button>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#services">Services</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#team">Team</a></li>
+    <li><a href="#timeline">Timeline</a></li>
+    <li><a href="#tech">Tech Stack</a></li>
+  </ul>
+  <a href="#cta" class="nav-cta">Download App</a>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="hero-badge">🇧🇩 Built for Bangladesh</div>
+    <h1>
+      Find Local Services
+      <span class="accent">Near You,</span>
+      <span class="accent2">Instantly.</span>
+    </h1>
+    <p class="hero-desc">Pocket Service connects you with verified local professionals — tutors, technicians, shopkeepers and more — using GPS-powered discovery. Simple. Fast. Trusted.</p>
+    <div class="hero-btns">
+      <a href="#services" class="btn-primary">
+        <span>Explore Services</span>
+        <span>→</span>
+      </a>
+      <a href="#how" class="btn-outline">
+        <span>How It Works</span>
+      </a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><span class="stat-num" data-target="500">0</span><div class="stat-label">Service Providers</div></div>
+      <div class="stat"><span class="stat-num" data-target="12">0</span><div class="stat-label">Service Categories</div></div>
+      <div class="stat"><span class="stat-num" data-target="3">0</span><div class="stat-label">Team Members</div></div>
+    </div>
+  </div>
+  <div class="hero-phones">
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="phone-notch"></div>
+        <div class="phone-ui">
+          <div class="phone-map">
+            <div class="map-lines"></div>
+            <div class="map-dot"></div>
+            <div class="map-dot"></div>
+            <div class="map-dot"></div>
+          </div>
+          <div class="phone-card">
+            <div class="pcard-icon" style="background:rgba(0,212,170,0.1)">🔧</div>
+            <div class="pcard-info">
+              <div class="pcard-name">Rahim's Repair Shop</div>
+              <div class="pcard-sub">Electrician • 0.8km away</div>
+            </div>
+            <div class="pcard-rating">★ 4.9</div>
+          </div>
+          <div class="phone-card">
+            <div class="pcard-icon" style="background:rgba(124,58,237,0.15)">📚</div>
+            <div class="pcard-info">
+              <div class="pcard-name">Karim Sir - Tutor</div>
+              <div class="pcard-sub">Math & Science • 1.2km</div>
+            </div>
+            <div class="pcard-rating">★ 4.8</div>
+          </div>
+          <div class="phone-card">
+            <div class="pcard-icon" style="background:rgba(255,107,53,0.1)">💈</div>
+            <div class="pcard-info">
+              <div class="pcard-name">Style Cuts Salon</div>
+              <div class="pcard-sub">Beauty • 0.5km away</div>
+            </div>
+            <div class="pcard-rating">★ 4.7</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-frame tilt"></div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="section-header reveal" style="max-width:1200px; margin:0 auto 4rem">
+    <div class="section-label">Why Pocket Service</div>
+    <h2 class="section-title">Everything You Need,<br>Right Where You Are</h2>
+    <p class="section-desc">A complete ecosystem that bridges the gap between service seekers and local professionals.</p>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card reveal" id="fc1">
+      <div class="feature-icon" style="background:rgba(0,212,170,0.1)">📍</div>
+      <div class="feature-title">GPS-Powered Discovery</div>
+      <p class="feature-desc">Find service providers within your exact location radius using real-time GPS and Google Maps API integration.</p>
+    </div>
+    <div class="feature-card reveal" id="fc2">
+      <div class="feature-icon" style="background:rgba(124,58,237,0.1)">🔒</div>
+      <div class="feature-title">Secure Authentication</div>
+      <p class="feature-desc">Firebase-backed phone and email login ensures your account stays protected with industry-standard security.</p>
+    </div>
+    <div class="feature-card reveal" id="fc3">
+      <div class="feature-icon" style="background:rgba(255,107,53,0.1)">📦</div>
+      <div class="feature-title">Easy Booking & Orders</div>
+      <p class="feature-desc">Place service or product orders directly through the app with a streamlined booking workflow.</p>
+    </div>
+    <div class="feature-card reveal" id="fc4">
+      <div class="feature-icon" style="background:rgba(251,191,36,0.1)">⭐</div>
+      <div class="feature-title">Reviews & Ratings</div>
+      <p class="feature-desc">Compare nearby providers using transparent community reviews and ratings to make the best choice.</p>
+    </div>
+    <div class="feature-card reveal" id="fc5">
+      <div class="feature-icon" style="background:rgba(0,212,170,0.1)">🏪</div>
+      <div class="feature-title">Provider Profiles</div>
+      <p class="feature-desc">Tutors, technicians, shopkeepers — all get digital visibility to showcase their services and grow their business.</p>
+    </div>
+    <div class="feature-card reveal" id="fc6">
+      <div class="feature-icon" style="background:rgba(124,58,237,0.1)">🔔</div>
+      <div class="feature-title">Real-time Notifications</div>
+      <p class="feature-desc">Firebase Cloud Messaging keeps users and providers updated on booking status instantly.</p>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div style="max-width:1100px; margin:0 auto">
+    <div class="section-header reveal">
+      <div class="section-label">Process</div>
+      <h2 class="section-title">How Pocket Service Works</h2>
+      <p class="section-desc">Three simple steps to connect with the right professional near you.</p>
+    </div>
+    <div class="steps-wrapper">
+      <div class="step reveal">
+        <div class="step-num">01</div>
+        <div class="step-icon">📲</div>
+        <div class="step-title">Open & Locate</div>
+        <p class="step-desc">Launch the app and allow location access. GPS pinpoints your position on the map automatically.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">02</div>
+        <div class="step-icon">🔍</div>
+        <div class="step-title">Search & Compare</div>
+        <p class="step-desc">Browse or search for the service you need. View profiles, ratings, and distance to make an informed choice.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">03</div>
+        <div class="step-icon">✅</div>
+        <div class="step-title">Book & Connect</div>
+        <p class="step-desc">Place your order or booking directly through the app. Get notified when your provider confirms.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">04</div>
+        <div class="step-icon">💬</div>
+        <div class="step-title">Review & Rate</div>
+        <p class="step-desc">After service completion, share your experience to help the community find the best providers.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SERVICES -->
+<section id="services">
+  <div style="max-width:1200px; margin:0 auto">
+    <div class="section-header reveal">
+      <div class="section-label">What We Offer</div>
+      <h2 class="section-title">Explore Service Categories</h2>
+      <p class="section-desc">From home repairs to tutoring — find any local service near you.</p>
+    </div>
+    <div class="services-scroll" id="serviceFilters"></div>
+    <div class="services-grid" id="servicesGrid"></div>
+  </div>
+</section>
+
+<!-- TEAM -->
+<section id="team">
+  <div style="max-width:1000px; margin:0 auto">
+    <div class="section-header reveal" style="text-align:center">
+      <div class="section-label">The Builders</div>
+      <h2 class="section-title">Meet the Team</h2>
+      <p class="section-desc" style="margin-inline:auto">8th Semester CSE students at Varendra University, Batch 31, Section D — supervised by Adrita Alam.</p>
+    </div>
+    <div class="team-grid">
+      <div class="team-card reveal">
+        <div class="team-avatar" style="background:linear-gradient(135deg,rgba(0,212,170,0.15),rgba(0,212,170,0.05)); color:var(--accent)">MA</div>
+        <div class="team-id">ID: 223311129</div>
+        <div class="team-name">MD. Aktaruzzaman</div>
+        <div class="team-role" style="background:rgba(0,212,170,0.1); color:var(--accent)">Backend Dev · Team Lead</div>
+      </div>
+      <div class="team-card reveal">
+        <div class="team-avatar" style="background:linear-gradient(135deg,rgba(124,58,237,0.15),rgba(124,58,237,0.05)); color:#a78bfa">MH</div>
+        <div class="team-id">ID: 223311149</div>
+        <div class="team-name">MD. Mahmudul Hasan</div>
+        <div class="team-role" style="background:rgba(124,58,237,0.1); color:#a78bfa">Frontend Dev · Designer</div>
+      </div>
+      <div class="team-card reveal">
+        <div class="team-avatar" style="background:linear-gradient(135deg,rgba(255,107,53,0.15),rgba(255,107,53,0.05)); color:var(--accent2)">IH</div>
+        <div class="team-id">ID: 223311154</div>
+        <div class="team-name">MD. Istiak Hasan</div>
+        <div class="team-role" style="background:rgba(255,107,53,0.1); color:var(--accent2)">Research · DB Design</div>
+      </div>
+    </div>
+    <div style="margin-top:2.5rem; text-align:center; reveal">
+      <div style="font-size:0.85rem; color:var(--muted)">Supervised by <strong style="color:var(--text)">Adrita Alam</strong> — Lecturer, Dept. of CSE, Varendra University</div>
+    </div>
+  </div>
+</section>
+
+<!-- TECH STACK -->
+<section id="tech">
+  <div style="max-width:1100px; margin:0 auto">
+    <div class="section-header reveal">
+      <div class="section-label">Under the Hood</div>
+      <h2 class="section-title">Technology Stack</h2>
+      <p class="section-desc">Built with production-grade tools and modern mobile development practices.</p>
+    </div>
+    <div class="tech-grid" id="techGrid"></div>
+  </div>
+</section>
+
+<!-- DATABASE -->
+<section id="database">
+  <div style="max-width:1100px; margin:0 auto">
+    <div class="section-header reveal">
+      <div class="section-label">Data Architecture</div>
+      <h2 class="section-title">Database Design</h2>
+      <p class="section-desc">MySQL database normalized to 3NF with 5 interrelated tables for efficient data management.</p>
+    </div>
+    <div class="db-layout">
+      <div class="db-tables" id="dbTables"></div>
+      <div class="db-diagram reveal">
+        <div class="db-diagram-title">Entity Relationship Overview</div>
+        <svg class="erd-canvas" viewBox="0 0 360 380" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L8,3 z" fill="rgba(0,212,170,0.6)"/>
+            </marker>
+          </defs>
+          <!-- Connections -->
+          <line x1="180" y1="80" x2="90" y2="160" stroke="rgba(0,212,170,0.3)" stroke-width="1.5" marker-end="url(#arrow)"/>
+          <line x1="180" y1="80" x2="270" y2="160" stroke="rgba(0,212,170,0.3)" stroke-width="1.5" marker-end="url(#arrow)"/>
+          <line x1="90" y1="200" x2="90" y2="280" stroke="rgba(0,212,170,0.3)" stroke-width="1.5" marker-end="url(#arrow)"/>
+          <line x1="270" y1="200" x2="270" y2="280" stroke="rgba(0,212,170,0.3)" stroke-width="1.5" marker-end="url(#arrow)"/>
+          <line x1="130" y1="310" x2="230" y2="310" stroke="rgba(0,212,170,0.2)" stroke-width="1.5" stroke-dasharray="4,4"/>
+          <!-- Users -->
+          <rect x="120" y="30" width="120" height="50" rx="10" fill="rgba(0,212,170,0.1)" stroke="rgba(0,212,170,0.4)" stroke-width="1.5"/>
+          <text x="180" y="58" text-anchor="middle" fill="#00d4aa" font-family="Syne,sans-serif" font-size="13" font-weight="700">👤 Users</text>
+          <!-- Services -->
+          <rect x="20" y="160" width="140" height="50" rx="10" fill="rgba(124,58,237,0.1)" stroke="rgba(124,58,237,0.4)" stroke-width="1.5"/>
+          <text x="90" y="188" text-anchor="middle" fill="#a78bfa" font-family="Syne,sans-serif" font-size="13" font-weight="700">🛠 Services</text>
+          <!-- Locations -->
+          <rect x="200" y="160" width="140" height="50" rx="10" fill="rgba(255,107,53,0.1)" stroke="rgba(255,107,53,0.4)" stroke-width="1.5"/>
+          <text x="270" y="188" text-anchor="middle" fill="#ff6b35" font-family="Syne,sans-serif" font-size="13" font-weight="700">📍 Locations</text>
+          <!-- Bookings -->
+          <rect x="20" y="280" width="140" height="50" rx="10" fill="rgba(251,191,36,0.1)" stroke="rgba(251,191,36,0.4)" stroke-width="1.5"/>
+          <text x="90" y="308" text-anchor="middle" fill="#fbbf24" font-family="Syne,sans-serif" font-size="13" font-weight="700">📅 Bookings</text>
+          <!-- Reviews -->
+          <rect x="200" y="280" width="140" height="50" rx="10" fill="rgba(0,212,170,0.08)" stroke="rgba(0,212,170,0.25)" stroke-width="1.5"/>
+          <text x="270" y="308" text-anchor="middle" fill="#6ee7b7" font-family="Syne,sans-serif" font-size="13" font-weight="700">⭐ Reviews</text>
+          <!-- Labels -->
+          <text x="120" y="360" text-anchor="middle" fill="rgba(139,153,181,0.6)" font-family="DM Sans,sans-serif" font-size="10">Normalized to 3NF</text>
+          <text x="240" y="360" text-anchor="middle" fill="rgba(139,153,181,0.6)" font-family="DM Sans,sans-serif" font-size="10">5 Interrelated Tables</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TIMELINE -->
+<section id="timeline">
+  <div style="max-width:700px; margin:0 auto">
+    <div class="section-header reveal">
+      <div class="section-label">Project Progress</div>
+      <h2 class="section-title">Work & Time Management</h2>
+      <p class="section-desc">A chronological breakdown of our development milestones and current status.</p>
+    </div>
+    <div class="timeline-wrapper">
+      <div class="timeline-line"></div>
+      <div id="timelineItems"></div>
+    </div>
+  </div>
+</section>
+
+<!-- CONSTRAINTS -->
+<section id="constraints">
+  <div style="max-width:1000px; margin:0 auto">
+    <div class="section-header reveal">
+      <div class="section-label">Honest Assessment</div>
+      <h2 class="section-title">Constraints & Limitations</h2>
+      <p class="section-desc">Known limitations we're actively working to address in future iterations.</p>
+    </div>
+    <div class="constraints-grid" id="constraintsGrid"></div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="cta">
+  <div style="max-width:700px; margin:0 auto">
+    <div class="section-label">Get Started</div>
+    <h2 class="section-title reveal">Ready to Discover<br>Local Services?</h2>
+    <p class="section-desc reveal" style="margin-inline:auto">Currently available in Rajshahi, Bangladesh. Expanding to more cities soon. Join us early and experience the future of local services.</p>
+    <div class="hero-btns reveal" style="margin-top:2.5rem">
+      <a href="#" class="btn-primary">📱 Download for Android</a>
+      <a href="#features" class="btn-outline">Learn More</a>
+    </div>
+    <p style="margin-top:2rem; font-size:0.8rem; color:var(--muted)" class="reveal">
+      Course: CSE 4212 · Varendra University · Batch 31
+    </p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div>
+    <div class="footer-brand">Pocket<span>Service</span></div>
+    <div class="footer-info">A local service marketplace for Bangladesh.<br>Built with ❤ by Team 31D, Varendra University.</div>
+  </div>
+  <div class="footer-right">
+    <div>© 2025–2026 PocketService</div>
+    <div style="margin-top:0.3rem">Supervised by Adrita Alam, Dept. of CSE, VU</div>
+  </div>
+</footer>
+
+<script>
+// ── CURSOR ──
+const cursor = document.getElementById('cursor');
+const cursorTrail = document.getElementById('cursorTrail');
+let mx = 0, my = 0, tx = 0, ty = 0;
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cursor.style.left = mx - 6 + 'px';
+  cursor.style.top = my - 6 + 'px';
+});
+function animateTrail() {
+  tx += (mx - tx) * 0.15;
+  ty += (my - ty) * 0.15;
+  cursorTrail.style.left = tx - 16 + 'px';
+  cursorTrail.style.top = ty - 16 + 'px';
+  requestAnimationFrame(animateTrail);
+}
+animateTrail();
+
+// ── FEATURE CARD MOUSE GLOW ──
+document.querySelectorAll('.feature-card').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const r = card.getBoundingClientRect();
+    card.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100) + '%');
+    card.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100) + '%');
+  });
+});
+
+// ── NAV TOGGLE (mobile) ──
+document.getElementById('navToggle').addEventListener('click', () => {
+  document.getElementById('navLinks').classList.toggle('open');
+});
+
+// ── SCROLL REVEAL ──
+const revealObs = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if(e.isIntersecting) { e.target.classList.add('visible'); } });
+}, { threshold: 0.12 });
+document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+
+// ── COUNTER ANIMATION ──
+const counters = document.querySelectorAll('.stat-num');
+const countObs = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if(entry.isIntersecting) {
+      const target = parseInt(entry.target.dataset.target);
+      let current = 0;
+      const step = target / 50;
+      const timer = setInterval(() => {
+        current += step;
+        if(current >= target) { current = target; clearInterval(timer); }
+        entry.target.textContent = Math.floor(current) + (target > 100 ? '+' : '');
+      }, 30);
+      countObs.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.5 });
+counters.forEach(c => countObs.observe(c));
+
+// ── SERVICES DATA ──
+const categories = ['All','Home','Education','Beauty','Tech','Food','Health'];
+const services = [
+  { cat:'Home', icon:'🔧', name:'Electrician', desc:'Wiring, repairs, installations by certified electricians near you.', providers:'14 providers', badge:'Popular', badgeColor:'rgba(0,212,170,0.15)', badgeText:'#00d4aa' },
+  { cat:'Home', icon:'🪠', name:'Plumbing', desc:'Fix leaks, unclog drains, pipe installation services.', providers:'9 providers', badge:'Available', badgeColor:'rgba(124,58,237,0.15)', badgeText:'#a78bfa' },
+  { cat:'Education', icon:'📚', name:'Home Tutoring', desc:'Math, Science, English tutors for all grades at your doorstep.', providers:'22 providers', badge:'Top Rated', badgeColor:'rgba(251,191,36,0.15)', badgeText:'#fbbf24' },
+  { cat:'Beauty', icon:'💈', name:'Salon & Haircut', desc:'Professional haircuts, styling, and grooming services.', providers:'11 providers', badge:'New', badgeColor:'rgba(255,107,53,0.15)', badgeText:'#ff6b35' },
+  { cat:'Tech', icon:'💻', name:'PC Repair', desc:'Computer, laptop repairs and software troubleshooting.', providers:'7 providers', badge:'Popular', badgeColor:'rgba(0,212,170,0.15)', badgeText:'#00d4aa' },
+  { cat:'Home', icon:'🏗', name:'AC Service', desc:'AC installation, cleaning, gas refill, and repair.', providers:'6 providers', badge:'Available', badgeColor:'rgba(124,58,237,0.15)', badgeText:'#a78bfa' },
+  { cat:'Food', icon:'🍛', name:'Home-cooked Meals', desc:'Order fresh home-cooked food from local chefs near you.', providers:'18 providers', badge:'New', badgeColor:'rgba(255,107,53,0.15)', badgeText:'#ff6b35' },
+  { cat:'Health', icon:'💊', name:'Medicine Delivery', desc:'Get medicines delivered from local pharmacies quickly.', providers:'5 providers', badge:'Essential', badgeColor:'rgba(251,191,36,0.15)', badgeText:'#fbbf24' },
+  { cat:'Tech', icon:'📱', name:'Phone Repair', desc:'Screen replacements, battery, charging port fixes.', providers:'12 providers', badge:'Popular', badgeColor:'rgba(0,212,170,0.15)', badgeText:'#00d4aa' },
+];
+
+const filtersCont = document.getElementById('serviceFilters');
+const gridCont = document.getElementById('servicesGrid');
+let activeFilter = 'All';
+
+categories.forEach(cat => {
+  const chip = document.createElement('div');
+  chip.className = 'service-chip' + (cat === 'All' ? ' active' : '');
+  chip.textContent = cat;
+  chip.addEventListener('click', () => {
+    activeFilter = cat;
+    document.querySelectorAll('.service-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    renderServices();
+  });
+  filtersCont.appendChild(chip);
+});
+
+function renderServices() {
+  gridCont.innerHTML = '';
+  const filtered = activeFilter === 'All' ? services : services.filter(s => s.cat === activeFilter);
+  filtered.forEach((s, i) => {
+    const card = document.createElement('div');
+    card.className = 'service-card visible';
+    card.style.animationDelay = (i * 0.05) + 's';
+    card.innerHTML = `
+      <div class="sc-icon">${s.icon}</div>
+      <div class="sc-name">${s.name}</div>
+      <p class="sc-desc">${s.desc}</p>
+      <div class="sc-meta">
+        <span class="sc-providers">${s.providers}</span>
+        <span class="sc-badge" style="background:${s.badgeColor}; color:${s.badgeText}">${s.badge}</span>
+      </div>`;
+    gridCont.appendChild(card);
+  });
+}
+renderServices();
+
+// ── TECH STACK ──
+const techs = [
+  { icon:'⚡', name:'Android Studio', type:'IDE' },
+  { icon:'☕', name:'Java / XML', type:'Frontend' },
+  { icon:'🔥', name:'Firebase', type:'Backend & Auth' },
+  { icon:'🗄', name:'MySQL', type:'Database' },
+  { icon:'🗺', name:'Google Maps API', type:'Location' },
+  { icon:'📡', name:'GPS Tracking', type:'Location Services' },
+  { icon:'🔐', name:'Firebase Auth', type:'Authentication' },
+  { icon:'🎨', name:'Figma', type:'UI Prototyping' },
+];
+const techGrid = document.getElementById('techGrid');
+techs.forEach((t, i) => {
+  const el = document.createElement('div');
+  el.className = 'tech-item reveal';
+  el.style.transitionDelay = (i * 0.06) + 's';
+  el.innerHTML = `<span class="tech-icon">${t.icon}</span><div class="tech-name">${t.name}</div><div class="tech-type">${t.type}</div>`;
+  techGrid.appendChild(el);
+  revealObs.observe(el);
+});
+
+// ── DATABASE TABLES ──
+const tables = [
+  { icon:'👤', name:'Users', badge:'PK: user_id', fields:[['INT','user_id','PK'],['VARCHAR','name',''],['VARCHAR','email',''],['VARCHAR','phone',''],['ENUM','role','provider/seeker'],['TIMESTAMP','created_at','']] },
+  { icon:'🛠', name:'Services', badge:'PK: service_id', fields:[['INT','service_id','PK'],['INT','provider_id','FK'],['VARCHAR','title',''],['TEXT','description',''],['DECIMAL','price',''],['VARCHAR','category','']] },
+  { icon:'📍', name:'Locations', badge:'PK: location_id', fields:[['INT','location_id','PK'],['INT','user_id','FK'],['DECIMAL','latitude',''],['DECIMAL','longitude',''],['VARCHAR','address',''],['TIMESTAMP','updated_at','']] },
+  { icon:'📅', name:'Bookings', badge:'PK: booking_id', fields:[['INT','booking_id','PK'],['INT','seeker_id','FK'],['INT','service_id','FK'],['ENUM','status','pending/done'],['TIMESTAMP','booked_at','']] },
+  { icon:'⭐', name:'Reviews', badge:'PK: review_id', fields:[['INT','review_id','PK'],['INT','booking_id','FK'],['INT','rating','1-5'],['TEXT','comment',''],['TIMESTAMP','created_at','']] },
+];
+const dbCont = document.getElementById('dbTables');
+tables.forEach((t, i) => {
+  const el = document.createElement('div');
+  el.className = 'db-table reveal';
+  el.style.transitionDelay = (i * 0.08) + 's';
+  el.innerHTML = `
+    <div class="db-table-header" onclick="this.nextElementSibling.classList.toggle('open')">
+      <span class="db-table-icon">${t.icon}</span>
+      <span class="db-table-name">${t.name}</span>
+      <span class="db-table-badge">${t.badge}</span>
+    </div>
+    <div class="db-table-body ${i===0?'open':''}">
+      ${t.fields.map(f=>`<div class="db-field"><span class="field-type">${f[0]}</span><span class="field-name">${f[1]}</span>${f[2]?`<span class="field-pk">${f[2]}</span>`:''}</div>`).join('')}
+    </div>`;
+  dbCont.appendChild(el);
+  revealObs.observe(el);
+});
+
+// ── TIMELINE ──
+const tasks = [
+  { num:'01', task:'Project Planning', desc:'Define objectives & scope of Pocket Service', members:['MD. Aktaruzzaman','MD. Mahmudul Hasan'], status:'done', date:'Sep 2025' },
+  { num:'02', task:'Literature Review', desc:'Research Sheba.xyz, HandyMama, Egoola & related work', members:['MD. Istiak Hasan'], status:'done', date:'Sep–Oct 2025' },
+  { num:'03', task:'System Design', desc:'Architecture, UI wireframes & system diagrams', members:['MD. Aktaruzzaman','MD. Mahmudul Hasan'], status:'done', date:'Oct–Nov 2025' },
+  { num:'04', task:'Database Design', desc:'Schema design, ER diagrams & normalization (3NF)', members:['MD. Istiak Hasan'], status:'not', date:'TBD' },
+  { num:'05', task:'Frontend Development', desc:'Android UI/UX coding in Java/XML with Android Studio', members:['MD. Mahmudul Hasan'], status:'done', date:'Nov 2025–Apr 2026' },
+  { num:'06', task:'Backend Development', desc:'API, business logic, Firebase & MySQL integration', members:['MD. Aktaruzzaman','MD. Istiak Hasan'], status:'not', date:'TBD' },
+  { num:'07', task:'Testing & Debugging', desc:'Unit and integration testing across all modules', members:['MD. Mahmudul Hasan'], status:'not', date:'TBD' },
+  { num:'08', task:'Documentation', desc:'Thesis report, technical manuals & academic write-up', members:['All Members'], status:'progress', date:'Nov 2025–Ongoing' },
+  { num:'09', task:'Presentation Prep', desc:'Slides, rehearsals & seminar preparation', members:['All Members'], status:'done', date:'Apr 2026' },
+  { num:'10', task:'Final Submission', desc:'Submit completed thesis and project deliverables', members:['All Members'], status:'not', date:'Dec 2025' },
+];
+const statusMap = { done:{cls:'status-done',label:'✓ Done'}, progress:{cls:'status-progress',label:'⟳ In Progress'}, not:{cls:'status-not',label:'○ Pending'} };
+const dotColors = { done:'background:rgba(0,212,170,0.15); color:var(--accent); border-color:rgba(0,212,170,0.3)', progress:'background:rgba(251,191,36,0.15); color:#fbbf24; border-color:rgba(251,191,36,0.3)', not:'background:rgba(255,255,255,0.04); color:var(--muted); border-color:var(--border)' };
+const tlCont = document.getElementById('timelineItems');
+tasks.forEach((t, i) => {
+  const s = statusMap[t.status];
+  const dc = dotColors[t.status];
+  const el = document.createElement('div');
+  el.className = 'timeline-item reveal';
+  el.style.transitionDelay = (i * 0.07) + 's';
+  el.innerHTML = `
+    <div class="timeline-dot" style="${dc}">${t.num}</div>
+    <div class="timeline-content">
+      <div class="tl-header">
+        <div class="tl-task">${t.task}</div>
+        <span class="tl-status ${s.cls}">${s.label}</span>
+      </div>
+      <div class="tl-desc">${t.desc} <span style="color:var(--muted);font-size:0.78rem">· ${t.date}</span></div>
+      <div class="tl-members">${t.members.map(m=>`<span class="tl-member-tag">${m}</span>`).join('')}</div>
+    </div>`;
+  tlCont.appendChild(el);
+  revealObs.observe(el);
+});
+
+// ── CONSTRAINTS ──
+const constraints = [
+  { icon:'🗺', title:'Geographical Scope', desc:'Initial implementation is limited to Rajshahi city, restricting broader regional coverage.' },
+  { icon:'📱', title:'Device Requirement', desc:'Requires a smartphone with active internet connectivity and GPS functionality.' },
+  { icon:'💵', title:'Payment Limitation', desc:'Only cash-based transactions supported currently. Digital payments planned for future.' },
+  { icon:'👤', title:'Provider Verification', desc:'Manual verification process via physical letters — no automated KYC yet.' },
+  { icon:'📶', title:'Connectivity Dependency', desc:'Fully dependent on internet access. No offline functionality available.' },
+  { icon:'📈', title:'Scalability Consideration', desc:'Expansion to other cities will require additional infrastructure and resources.' },
+];
+const cgrid = document.getElementById('constraintsGrid');
+constraints.forEach((c, i) => {
+  const el = document.createElement('div');
+  el.className = 'constraint-item reveal';
+  el.style.transitionDelay = (i * 0.08) + 's';
+  el.innerHTML = `<div class="constraint-icon">${c.icon}</div><div><div class="constraint-title">${c.title}</div><div class="constraint-desc">${c.desc}</div></div>`;
+  cgrid.appendChild(el);
+  revealObs.observe(el);
+});
+
+// ── RE-OBSERVE after dynamic insert ──
+setTimeout(() => {
+  document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+}, 100);
+</script>
+</body>
+</html>
